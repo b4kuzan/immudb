@@ -5,6 +5,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
+	"os"
+
+	_ "github.com/codenotary/immudb/cmd/immugw/swaggerui"
+
 	"github.com/codenotary/immudb/pkg/api/schema"
 	rp "github.com/codenotary/immudb/pkg/client"
 	"github.com/codenotary/immudb/pkg/client/cache"
@@ -12,12 +17,11 @@ import (
 	"github.com/codenotary/immudb/pkg/logger"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/rakyll/statik/fs"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
-	"net/http"
-	"os"
 )
 
 func main() {
@@ -43,6 +47,8 @@ func main() {
 }
 
 func serve(cmd *cobra.Command, args []string) error {
+	logger := logger.New("immugw", os.Stderr)
+
 	port, err := cmd.Flags().GetString("port")
 	if err != nil {
 		return err
@@ -65,7 +71,17 @@ func serve(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	mux := runtime.NewServeMux()
+	rmux := runtime.NewServeMux()
+	mux := http.NewServeMux()
+	mux.Handle("/", rmux)
+
+	statikFS, err := fs.New()
+	if err != nil {
+		logger.Errorf(err.Error())
+		return err
+	}
+	fs := http.FileServer(statikFS)
+	mux.Handle("/swagger-ui/", http.StripPrefix("/swagger-ui", fs))
 
 	handler := cors.Default().Handler(mux)
 
@@ -90,7 +106,6 @@ func serve(cmd *cobra.Command, args []string) error {
 		}()
 	}()
 
-	logger := logger.New("immugw", os.Stderr)
 	client := schema.NewImmuServiceClient(conn)
 	c := cache.NewFileCache()
 	rs := rp.NewRootService(client, c)
@@ -99,13 +114,14 @@ func serve(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	ssh := gw.NewSafesetHandler(mux, client, rs)
-	sgh := gw.NewSafegetHandler(mux, client, rs)
-	hh := gw.NewHistoryHandler(mux, client, rs)
-	mux.Handle(http.MethodPost, schema.Pattern_ImmuService_SafeSet_0(), ssh.Safeset)
-	mux.Handle(http.MethodPost, schema.Pattern_ImmuService_SafeGet_0(), sgh.Safeget)
-	mux.Handle(http.MethodGet, schema.Pattern_ImmuService_History_0(), hh.History)
-	err = schema.RegisterImmuServiceHandlerFromEndpoint(ctx, mux, *grpcServerEndpoint, opts)
+
+	ssh := gw.NewSafesetHandler(rmux, client, rs)
+	sgh := gw.NewSafegetHandler(rmux, client, rs)
+	hh := gw.NewHistoryHandler(rmux, client, rs)
+	rmux.Handle(http.MethodPost, schema.Pattern_ImmuService_SafeSet_0(), ssh.Safeset)
+	rmux.Handle(http.MethodPost, schema.Pattern_ImmuService_SafeGet_0(), sgh.Safeget)
+	rmux.Handle(http.MethodGet, schema.Pattern_ImmuService_History_0(), hh.History)
+	err = schema.RegisterImmuServiceHandlerFromEndpoint(ctx, rmux, *grpcServerEndpoint, opts)
 	if err != nil {
 		return err
 	}
@@ -125,5 +141,6 @@ func serve(cmd *cobra.Command, args []string) error {
 		}
 	}
 	logger.Infof("Starting immugw at %s:%s", host, port)
+	logger.Infof("Swagger UI available at http://%s:%s/swagger-ui/", host, port)
 	return http.ListenAndServe(host+":"+port, handler)
 }

@@ -12,6 +12,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.12.2
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.2.1
+	github.com/rakyll/statik v0.1.7
 	github.com/rs/cors v1.7.0
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.4.0

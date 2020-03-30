@@ -45,21 +45,32 @@ test:
 	$(GO) test --race ${TEST_FLAGS} ./...
 
 .PHONY: build/codegen
-build/codegen: pkg/api/schema/schema.pb.go pkg/api/schema/schema.pb.gw.go
+build/codegen: pkg/api/schema/schema.pb.go pkg/api/schema/schema.pb.gw.go pkg/api/schema/value.pb.go
 
 .PHONY: pkg/api/schema/schema.pb.go
 pkg/api/schema/schema.pb.go:
-	$(PROTOC) -I pkg/api/schema/ pkg/api/schema/schema.proto \
+	$(PROTOC) -I ./pkg/api/schema/ pkg/api/schema/schema.proto \
 	-I${GOPATH}/pkg/mod \
 	-I${GOPATH}/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.12.2/third_party/googleapis \
 	--go_out=plugins=grpc,paths=source_relative:pkg/api/schema
 
 .PHONY: pkg/api/schema/schema.pb.gw.go
 pkg/api/schema/schema.pb.gw.go:
-	$(PROTOC) -I pkg/api/schema/ pkg/api/schema/schema.proto \
+	$(PROTOC) -I ./pkg/api/schema/ pkg/api/schema/schema.proto \
 	-I${GOPATH}/pkg/mod \
 	-I${GOPATH}/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.12.2/third_party/googleapis \
   	--grpc-gateway_out=logtostderr=true,paths=source_relative:pkg/api/schema \
+    --swagger_out=logtostderr=true:./cmd/immugw/swagger-ui/ 
+
+	statik -src=cmd/immugw/swagger-ui -dest=cmd/immugw -p swaggerui -f
+
+
+.PHONY: pkg/api/schema/value.pb.go
+pkg/api/schema/value.pb.go:
+	$(PROTOC) -I ./pkg/api/schema/ pkg/api/schema/value.proto \
+	-I${GOPATH}/pkg/mod \
+	-I${GOPATH}/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.12.2/third_party/googleapis \
+	--go_out=plugins=grpc,paths=source_relative:pkg/api/schema
 
 .PHONY: clean
 clean:
@@ -96,3 +107,20 @@ tools/comparison/mongodb:
 tools/comparison/scylladb:
 	$(DOCKER) build -t immu_scylladb ./tools/comparison/scylladb
 	$(DOCKER) run --rm -it immu_scylladb
+
+.PHONY: prerequisites
+prerequisites:
+	wget https://github.com/protocolbuffers/protobuf/releases/download/v3.11.4/protoc-3.11.4-linux-x86_64.zip -O /tmp/protoc.zip
+	unzip -o /tmp/protoc.zip -d $(GOPATH)/bin
+	rm -rf $(GOPATH)/pkg/mod/google
+	mv $(GOPATH)/bin/include/google $(GOPATH)/pkg/mod
+	rmdir $(GOPATH)/bin/include
+	rm /tmp/protoc.zip
+	go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+	go get -u google.golang.org/grpc
+	go get -u github.com/golang/protobuf/
+	go get -u github.com/golang/protobuf/proto
+	go get -u github.com/golang/protobuf/protoc-gen-go
+	go get github.com/rakyll/statik
+	
