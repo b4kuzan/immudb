@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/codenotary/immudb/pkg/api"
 
@@ -55,13 +56,13 @@ func main() {
 					DefaultClient().
 					WithOptions(*options)
 				response, err := immuClient.Connected(func() (interface{}, error) {
-					return immuClient.Get(bytes.NewReader([]byte(args[0])))
+					return immuClient.GetSV(bytes.NewReader([]byte(args[0])))
 				})
 				if err != nil {
 					_, _ = fmt.Fprintln(os.Stderr, err)
 					os.Exit(1)
 				}
-				printItem([]byte(args[0]), nil, response)
+				printItem([]byte(args[0]), nil, 0, response)
 				return nil
 			},
 			Args: cobra.ExactArgs(1),
@@ -86,7 +87,7 @@ func main() {
 				var buf bytes.Buffer
 				tee := io.TeeReader(reader, &buf)
 				response, err := immuClient.Connected(func() (interface{}, error) {
-					return immuClient.Set(bytes.NewReader([]byte(args[0])), tee)
+					return immuClient.SetSV(bytes.NewReader([]byte(args[0])), tee)
 				})
 				if err != nil {
 					_, _ = fmt.Fprintln(os.Stderr, err)
@@ -96,7 +97,7 @@ func main() {
 				if err != nil {
 					return err
 				}
-				printItem([]byte(args[0]), value, response)
+				printItem([]byte(args[0]), value, 0, response)
 				return nil
 			},
 			Args: cobra.MinimumNArgs(1),
@@ -120,7 +121,8 @@ func main() {
 					os.Exit(1)
 				}
 				for _, item := range response.(*schema.ItemList).Items {
-					printItem(nil, nil, item)
+					si := client.ToSItem(item)
+					printItem(nil, nil, 0, si)
 					fmt.Println()
 				}
 
@@ -279,7 +281,8 @@ secondRoot: %x at index: %d
 					os.Exit(1)
 				}
 				for _, item := range response.(*schema.ItemList).Items {
-					printItem(nil, nil, item)
+					si := client.ToSItem(item)
+					printItem(nil, nil, 0, si)
 					fmt.Println()
 				}
 				return nil
@@ -343,8 +346,9 @@ func options(cmd *cobra.Command) (*client.Options, error) {
 	return &options, nil
 }
 
-func printItem(key []byte, value []byte, message interface{}) {
+func printItem(key []byte, value []byte, ts uint64, message interface{}) {
 	var index uint64
+
 	switch m := message.(type) {
 	case *schema.Index:
 		index = m.Index
@@ -352,11 +356,17 @@ func printItem(key []byte, value []byte, message interface{}) {
 		key = m.Key
 		value = m.Value
 		index = m.Index
+	case *schema.StructuredItem:
+		key = m.Key
+		value = m.Value.Payload
+		ts = m.Value.Timestamp
+		index = m.Index
 	}
 
 	fmt.Printf(`index:	%d
 key:	%s
 value:	%s
 hash:	%x
-`, index, key, value, api.Digest(index, key, value))
+time:	%s
+`, index, key, value, api.Digest(index, key, value), time.Unix(int64(ts), 0))
 }

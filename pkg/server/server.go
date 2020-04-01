@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net"
 	"os"
 	"os/signal"
@@ -86,6 +87,10 @@ func (s *ImmuServer) Set(ctx context.Context, kv *schema.KeyValue) (*schema.Inde
 	return item, nil
 }
 
+func (s *ImmuServer) SetSV(ctx context.Context, kv *schema.StructuredKeyValue) (*schema.Index, error) {
+	return nil, errors.New("Not implemented")
+}
+
 func (s *ImmuServer) SafeSet(ctx context.Context, opts *schema.SafeSetOptions) (*schema.Proof, error) {
 	s.Logger.Debugf("safeset %s %d bytes", opts.Kv.Key, len(opts.Kv.Value))
 	item, err := s.Store.SafeSet(*opts)
@@ -93,6 +98,9 @@ func (s *ImmuServer) SafeSet(ctx context.Context, opts *schema.SafeSetOptions) (
 		return nil, err
 	}
 	return item, nil
+}
+func (s *ImmuServer) SafeSetSV(ctx context.Context, opts *schema.SafeSetSVOptions) (*schema.Proof, error) {
+	return nil, errors.New("Not implemented")
 }
 
 func (s *ImmuServer) SetBatch(ctx context.Context, kvl *schema.KVList) (*schema.Index, error) {
@@ -102,6 +110,9 @@ func (s *ImmuServer) SetBatch(ctx context.Context, kvl *schema.KVList) (*schema.
 		return nil, err
 	}
 	return index, nil
+}
+func (s *ImmuServer) SetBatchSV(ctx context.Context, kvl *schema.SKVList) (*schema.Index, error) {
+	return nil, errors.New("Not implemented")
 }
 
 func (s *ImmuServer) Get(ctx context.Context, k *schema.Key) (*schema.Item, error) {
@@ -116,6 +127,9 @@ func (s *ImmuServer) Get(ctx context.Context, k *schema.Key) (*schema.Item, erro
 	}
 	return item, nil
 }
+func (s *ImmuServer) GetSV(ctx context.Context, k *schema.Key) (*schema.StructuredItem, error) {
+	return nil, errors.New("Not implemented")
+}
 
 func (s *ImmuServer) SafeGet(ctx context.Context, opts *schema.SafeGetOptions) (*schema.SafeItem, error) {
 	s.Logger.Debugf("safeget %s", opts.Key)
@@ -124,6 +138,10 @@ func (s *ImmuServer) SafeGet(ctx context.Context, opts *schema.SafeGetOptions) (
 		return nil, err
 	}
 	return item, nil
+}
+
+func (s *ImmuServer) SafeGetSV(ctx context.Context, opts *schema.SafeGetOptions) (*schema.SafeStructuredItem, error) {
+	return nil, errors.New("Not implemented")
 }
 
 func (s *ImmuServer) GetBatch(ctx context.Context, kl *schema.KeyList) (*schema.ItemList, error) {
@@ -141,9 +159,17 @@ func (s *ImmuServer) GetBatch(ctx context.Context, kl *schema.KeyList) (*schema.
 	return list, nil
 }
 
+func (s *ImmuServer) GetBatchSV(ctx context.Context, kl *schema.KeyList) (*schema.StructuredItemList, error) {
+	return nil, errors.New("Not implemented")
+}
+
 func (s *ImmuServer) Scan(ctx context.Context, opts *schema.ScanOptions) (*schema.ItemList, error) {
 	s.Logger.Debugf("scan %+v", *opts)
 	return s.Store.Scan(*opts)
+}
+
+func (s *ImmuServer) ScanSV(ctx context.Context, opts *schema.ScanOptions) (*schema.StructuredItemList, error) {
+	return nil, errors.New("Not implemented")
 }
 
 func (s *ImmuServer) Count(ctx context.Context, prefix *schema.KeyPrefix) (*schema.ItemsCount, error) {
@@ -178,6 +204,10 @@ func (s *ImmuServer) ByIndex(ctx context.Context, index *schema.Index) (*schema.
 	return item, nil
 }
 
+func (s *ImmuServer) ByIndexSV(ctx context.Context, index *schema.Index) (*schema.StructuredItem, error) {
+	return nil, errors.New("Not implemented")
+}
+
 func (s *ImmuServer) History(ctx context.Context, key *schema.Key) (*schema.ItemList, error) {
 	s.Logger.Debugf("history for key %s ", string(key.Key))
 
@@ -186,6 +216,10 @@ func (s *ImmuServer) History(ctx context.Context, key *schema.Key) (*schema.Item
 		return nil, err
 	}
 	return list, nil
+}
+
+func (s *ImmuServer) HistorySV(ctx context.Context, key *schema.Key) (*schema.StructuredItemList, error) {
+	return nil, errors.New("Not implemented")
 }
 
 func (s *ImmuServer) Health(context.Context, *empty.Empty) (*schema.HealthResponse, error) {

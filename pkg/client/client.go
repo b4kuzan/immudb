@@ -72,7 +72,7 @@ func (c *ImmuClient) Connected(f func() (interface{}, error)) (interface{}, erro
 	return result, nil
 }
 
-func (c *ImmuClient) Get(keyReader io.Reader) (*schema.Item, error) {
+func (c *ImmuClient) GetSV(keyReader io.Reader) (*schema.StructuredItem, error) {
 	start := time.Now()
 	if !c.isConnected() {
 		return nil, ErrNotConnected
@@ -81,7 +81,8 @@ func (c *ImmuClient) Get(keyReader io.Reader) (*schema.Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := c.serviceClient.Get(context.Background(), &schema.Key{Key: key})
+	item, err := c.serviceClient.Get(context.Background(), &schema.Key{Key: key})
+	result := ToSItem(item)
 	c.Logger.Debugf("get finished in %s", time.Since(start))
 	return result, err
 }
@@ -126,7 +127,7 @@ func (c *ImmuClient) GetBatch(keyReaders []io.Reader) (*schema.ItemList, error) 
 	return result, err
 }
 
-func (c *ImmuClient) Set(keyReader io.Reader, valueReader io.Reader) (*schema.Index, error) {
+func (c *ImmuClient) SetSV(keyReader io.Reader, valueReader io.Reader) (*schema.Index, error) {
 	start := time.Now()
 	if !c.isConnected() {
 		return nil, ErrNotConnected
@@ -139,15 +140,16 @@ func (c *ImmuClient) Set(keyReader io.Reader, valueReader io.Reader) (*schema.In
 	if err != nil {
 		return nil, err
 	}
-	result, err := c.serviceClient.Set(context.Background(), &schema.KeyValue{
-		Key:   key,
-		Value: value,
-	})
+
+	skv := NewSKV2(key, value)
+
+	result, err := c.serviceClient.Set(context.Background(), ToKV(skv))
+
 	c.Logger.Debugf("set finished in %s", time.Since(start))
 	return result, err
 }
 
-func (c *ImmuClient) SetBatch(request *BatchRequest) (*schema.Index, error) {
+func (c *ImmuClient) SetBatchSV(request *BatchRequest) (*schema.Index, error) {
 	start := time.Now()
 	if !c.isConnected() {
 		return nil, ErrNotConnected
