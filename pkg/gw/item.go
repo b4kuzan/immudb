@@ -17,8 +17,9 @@ limitations under the License.
 package gw
 
 type item struct {
-	Key      []byte `json:"key"`
-	Value    []byte `json:"value"`
-	Index    uint64 `json:"index"`
-	Verified bool   `json:"verified"`
+	Key       []byte `json:"key"`
+	Value     []byte `json:"value"`
+	Timestamp uint64 `json:"timestamp"`
+	Index     uint64 `json:"index"`
+	Verified  bool   `json:"verified"`
 }

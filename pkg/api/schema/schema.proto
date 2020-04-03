@@ -196,10 +196,10 @@ service ImmuService {
         };
 	};
 	rpc SetBatch (KVList) returns (Index){
-		option (google.api.http) = {
-            post: "/v1/immurestproxy/batch/set"
-            body: "*"
-        };
+		// option (google.api.http) = {
+        //     post: "/v1/immurestproxy/batch/set"
+        //     body: "*"
+        // };
 	};
 	rpc SetBatchSV (SKVList) returns (Index){
 		option (google.api.http) = {

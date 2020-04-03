@@ -45,11 +45,13 @@ func (r historyResponseOverwrite) call(ctx context.Context, mux *runtime.ServeMu
 		w.Header().Set("Content-Type", "application/json")
 		var items []item
 		for _, v := range itemList.Items {
+			sv := client.ToSItem(v)
 			t := item{
-				Key:      v.Key,
-				Value:    v.Value,
-				Index:    v.Index,
-				Verified: false,
+				Key:       sv.Key,
+				Value:     sv.Value.Payload,
+				Timestamp: sv.Value.Timestamp,
+				Index:     sv.Index,
+				Verified:  false,
 			}
 			items = append(items, t)
 		}

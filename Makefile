@@ -45,7 +45,7 @@ test:
 	$(GO) test --race ${TEST_FLAGS} ./...
 
 .PHONY: build/codegen
-build/codegen: pkg/api/schema/schema.pb.go pkg/api/schema/schema.pb.gw.go pkg/api/schema/value.pb.go
+build/codegen: pkg/api/schema/schema.pb.go pkg/api/schema/schema.pb.gw.go
 
 .PHONY: pkg/api/schema/schema.pb.go
 pkg/api/schema/schema.pb.go:
@@ -63,14 +63,6 @@ pkg/api/schema/schema.pb.gw.go:
     --swagger_out=logtostderr=true:./cmd/immugw/swagger-ui/ 
 
 	statik -src=cmd/immugw/swagger-ui -dest=cmd/immugw -p swaggerui -f
-
-
-.PHONY: pkg/api/schema/value.pb.go
-pkg/api/schema/value.pb.go:
-	$(PROTOC) -I ./pkg/api/schema/ pkg/api/schema/value.proto \
-	-I${GOPATH}/pkg/mod \
-	-I${GOPATH}/pkg/mod/github.com/grpc-ecosystem/grpc-gateway@v1.12.2/third_party/googleapis \
-	--go_out=plugins=grpc,paths=source_relative:pkg/api/schema
 
 .PHONY: clean
 clean:

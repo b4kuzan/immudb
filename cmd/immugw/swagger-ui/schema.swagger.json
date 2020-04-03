@@ -592,17 +592,6 @@
         }
       }
     },
-    "schemaKVList": {
-      "type": "object",
-      "properties": {
-        "KVs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/schemaKeyValue"
-          }
-        }
-      }
-    },
     "schemaKey": {
       "type": "object",
       "properties": {

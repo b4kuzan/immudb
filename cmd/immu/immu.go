@@ -86,7 +86,7 @@ func main() {
 				}
 				var buf bytes.Buffer
 				tee := io.TeeReader(reader, &buf)
-				response, err := immuClient.Connected(func() (interface{}, error) {
+				_, err = immuClient.Connected(func() (interface{}, error) {
 					return immuClient.SetSV(bytes.NewReader([]byte(args[0])), tee)
 				})
 				if err != nil {
@@ -97,6 +97,10 @@ func main() {
 				if err != nil {
 					return err
 				}
+
+				response, err := immuClient.Connected(func() (interface{}, error) {
+					return immuClient.GetSV(bytes.NewReader([]byte(args[0])))
+				})
 				printItem([]byte(args[0]), value, 0, response)
 				return nil
 			},

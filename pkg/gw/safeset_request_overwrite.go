@@ -19,9 +19,11 @@ package gw
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/codenotary/immudb/pkg/api/schema"
 	"github.com/codenotary/immudb/pkg/client"
@@ -65,6 +67,25 @@ func (r safeSetRequestOverwrite) call(ctx context.Context, marshaler runtime.Mar
 	ri := new(schema.Index)
 	ri.Index = root.Index
 	protoReq.RootIndex = ri
+
+	skv := &schema.StructuredKeyValue{
+		Key: protoReq.Kv.Key,
+		Value: &schema.Content{
+			Timestamp: uint64(time.Now().Unix()),
+			Payload:   protoReq.Kv.Value,
+		},
+	}
+
+	ts := make([]byte, 8)
+	binary.LittleEndian.PutUint64(ts, skv.Value.Timestamp)
+	val := append(ts, skv.Value.Payload[:]...)
+
+	kv := &schema.KeyValue{
+		Key:   skv.Key,
+		Value: val,
+	}
+
+	protoReq.Kv = kv
 
 	msg, err := client.SafeSet(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 
